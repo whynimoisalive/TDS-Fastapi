@@ -17,6 +17,6 @@ with open(os.path.join(os.path.dirname(__file__), '..', 'q-vercel-python.json'))
     marks_data = json.load(f)
 
 @app.get("/api")
-async def get_marks(names: list[str] = Query(...)):
-    marks = [marks_data.get(name, 0) for name in names]
+async def get_marks(name: list[str] = Query(...)):
+    marks = [int(marks_data.get(n, 0)) for n in name]
     return {"marks": marks}
