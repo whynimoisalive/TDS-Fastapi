@@ -19,5 +19,4 @@ with open(os.path.join(os.path.dirname(__file__), '..', 'q-vercel-python.json'))
 @app.get("/api")
 async def get_marks(name: list[str] = Query(...)):
     marks = [int(entry["marks"]) for entry in marks_data if entry["name"] in name]
-    marks.sort()
     return {"marks": marks}
