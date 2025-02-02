@@ -1,27 +1,36 @@
 import json
-from fastapi import FastAPI, Query
-from fastapi.middleware.cors import CORSMiddleware
+import os
+from serverless_http import handler
+from urllib.parse import parse_qs, urlparse
 
-app = FastAPI()
+def load_data():
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'q-vercel-python.json')
+    with open(file_path, 'r') as file:
+        return json.load(file)
 
-# Enable CORS so that GET requests from any origin are allowed.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET"],
-    allow_headers=["*"],
-)
+def app(environ, start_response):
+    # Parse query parameters
+    query = parse_qs(environ.get('QUERY_STRING', ''))
+    names = query.get('name', [])
+    
+    # Load data
+    data = load_data()
+    
+    # Prepare response
+    result = {"marks": []}
+    for name in names:
+        for entry in data:
+            if entry["name"] == name:
+                result["marks"].append(entry["marks"])
+    
+    # Build headers
+    headers = [
+        ('Content-Type', 'application/json'),
+        ('Access-Control-Allow-Origin', '*')
+    ]
+    
+    start_response('200 OK', headers)
+    return [json.dumps(result).encode('utf-8')]
 
-# Load the student marks data at startup.
-with open("q-vercel-python.json", "r") as f:
-    marks_data = json.load(f)
-
-@app.get("/api")
-async def get_marks(name: list[str] = Query(...)):
-    """
-    Expects one or more "name" query parameters.
-    Example: /api?name=Alice&name=Bob
-    Returns: { "marks": [95, 82] }
-    If a name is not found, returns 0 as the mark.
-    """
-    return {"marks": [marks_data.get(n, 0) for n in name]}
+# Vercel handler
+handle = handler(app)
