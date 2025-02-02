@@ -1,36 +1,22 @@
+from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 import json
 import os
-from serverless_http import handler
-from urllib.parse import parse_qs, urlparse
 
-def load_data():
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'q-vercel-python.json')
-    with open(file_path, 'r') as file:
-        return json.load(file)
+app = FastAPI()
 
-def app(environ, start_response):
-    # Parse query parameters
-    query = parse_qs(environ.get('QUERY_STRING', ''))
-    names = query.get('name', [])
-    
-    # Load data
-    data = load_data()
-    
-    # Prepare response
-    result = {"marks": []}
-    for name in names:
-        for entry in data:
-            if entry["name"] == name:
-                result["marks"].append(entry["marks"])
-    
-    # Build headers
-    headers = [
-        ('Content-Type', 'application/json'),
-        ('Access-Control-Allow-Origin', '*')
-    ]
-    
-    start_response('200 OK', headers)
-    return [json.dumps(result).encode('utf-8')]
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+)
 
-# Vercel handler
-handle = handler(app)
+# Load marks data
+with open(os.path.join(os.path.dirname(__file__), '..', 'q-vercel-python.json')) as f:
+    marks_data = json.load(f)
+
+@app.get("/api")
+async def get_marks(name: list[str] = Query(...)):
+    marks = [int(entry["marks"]) for entry in marks_data if entry["name"] in name]
+    return {"marks": marks}
