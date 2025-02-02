@@ -4,12 +4,11 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-# Load the student data
+# Load the student data from q-vercel-python.json
 with open("q-vercel-python.json", "r") as file:
     data = json.load(file)
 
 @app.get("/")
-async def read_marks(name: list[str] = Query([])):
-    # Get marks for each name in the query
+async def get_marks(name: list[str] = Query([])):
     marks = [data.get(n, "Not Found") for n in name]
     return JSONResponse(content={"marks": marks})
