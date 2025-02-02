@@ -1,20 +1,22 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 import json
 import os
-from serverless_http import handle
 
-app = Flask(__name__)
+app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+)
 
 # Load marks data
 with open(os.path.join(os.path.dirname(__file__), '..', 'q-vercel-python.json')) as f:
     marks_data = json.load(f)
 
-@app.route('/api', methods=['GET'])
-def get_marks():
-    names = request.args.getlist('name')
+@app.get("/api")
+async def get_marks(names: list[str] = Query(...)):
     marks = [marks_data.get(name, 0) for name in names]
-    response = jsonify({'marks': marks})
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-handler = handle(app)
+    return {"marks": marks}
